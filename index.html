@@ -1,0 +1,469 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS194-26 Face Morphing</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS194-26: Intro to Computer Vision and Computational Photography, Fall 2021</h1>
+<h1 align="middle">Project 3: Face Morphing</h1>
+<h2 align="middle">Angela Chen</h2>
+
+<br><br>
+
+<div>
+
+<!-- <h2 align="middle">Overview</h2>
+<p>The Prokudin-Gorskii photo collection contains glass plate images separated into three color channel images.
+    In this project, the goal is to use image processing techniques to create a single color image with as few
+    visual artifiacts as possible. The general idea to achieve this is to separate each image into three color channel (R, G, B color channels) images,
+    align them, and then stack them on top of each other so that a single RGB color image is created.
+    In this report, I will first go over a simple single-scale exhaustive search to align smaller jpg images.
+    Then I will go over implementing a multi-scale pyramid search for larger tiff images.</p> -->
+
+<h2 align="middle">Defining Correspondences</h2>
+
+<!-- <p></p> -->
+
+<!-- <h3 align="middle">Part 1.1: Finite Difference Operator</h3> -->
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/angela.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">Image of me.</figcaption>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/yeseul.jpg" align="middle" width="450px"/>
+            <figcaption align="middle">Image of Korean actress, Han Ye-seul.</figcaption>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/angela_points.png" align="middle" width="450px"/>
+          <figcaption align="middle">Keypoints of my face.</figcaption>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/yeseul_points.png" align="middle" width="450px"/>
+            <figcaption align="middle">Keypoints of Han Ye-seul's face.</figcaption>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+        <figure>
+          <img src="images/angela_yeseul_tri.png" align="middle" width="450px"/>
+          <figcaption align="middle">Triangulation of the average of the points of my face and the points of Han Ye-seul's face.</figcaption>
+        </figure>
+  </table>
+</div>
+
+<h2 align="middle">Computing the "Mid-way Face"</h2>
+
+<!-- <p>For my Gaussian filter, I chose a kernel size of 5 and a sigma value of 1.</p> -->
+
+<!-- <div align="middle">
+  <table style="width=100%">
+        <figure>
+          <img src="images/gaus.png" align="middle" width="450px"/>
+          <figcaption align="middle">blurred_cameraman. Blurred version of cameraman by convolving with a Gaussian.</figcaption>
+        </figure>
+  </table>
+</div> -->
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/angela.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">Original image of me.</figcaption>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/yeseul.jpg" align="middle" width="450px"/>
+            <figcaption align="middle">Original image of Han Ye-seul.</figcaption>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+        <figure>
+          <img src="images/angela_yeseul_midway.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">Midway face of me and Han Ye-seul.</figcaption>
+        </figure>
+  </table>
+</div>
+
+<!-- <div align="middle">
+  <table style="width=100%">
+        <figure>
+          <img src="images/cameraman.png" align="middle" width="450px"/>
+          <figcaption align="middle">blurred_cameraman. Blurred version of cameraman by convolving with a Gaussian.</figcaption>
+        </figure>
+  </table>
+</div> -->
+
+<h2 align="middle">The Morph Sequence</h2>
+
+<!-- <p></p> -->
+
+<!-- <h3 align="middle">Part 2.1: Image "Sharpening"</h3> -->
+
+<!-- <p>A simple way to "sharpen" a blurry image is to add more high frequencies to the original image.
+    To get the high frequencies of an image, you can convolve the original image with a Gaussian filter,
+    which is a low pass filter that retains only the low frequencies, to obtain a blurry version of the original imgage.
+    Then, you can subtract the blurred version from the original image to get the high frequencies of the image.
+    From there, you can scale the high frequencies by any constant alpha and add them to the original image to get a more "sharpened" image.</p> -->
+
+<div align="middle">
+  <table style="width=100%">
+        <figure>
+            <img src="images/angela_yeseul.gif" align="middle" width="450px"/>
+            <figcaption align="middle">A 45 frame morph sequence from my face to Han Ye-seul's face.</figcaption>
+        </figure>
+  </table>
+</div>
+
+<h2 align="middle">The "Mean Face" of a Population</h2>
+
+<p>I used a set of 37 Danish faces for my population.</p>
+
+<p>Some of the Danes morphed into the average Danish face shape of this set.</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/dane0.jpg" align="middle" width="450px"/>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/dane6.jpg" align="middle" width="450px"/>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/dane7.jpg" align="middle" width="450px"/>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/dane21.jpg" align="middle" width="450px"/>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/dane_avg_face.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">The average Danish face of this population.</figcaption>
+        </figure>
+      </td>
+      <br>
+    </tr>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/angela_to_dane.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">My face warped into the average Danish face geometry.</figcaption>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/dane_to_angela.jpg" align="middle" width="450px"/>
+            <figcaption align="middle">The average Danish face warped into my face geometry.</figcaption>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h2 align="middle">Caricatures: Extrapolating from the Mean</h2>
+
+<p>To extrapolate my face from the average Danish face, I computed the target face shape as
+    target_face_shape = (1 - alpha) * my_face_shape + alpha * avg_dane_face_shape.
+    I then warped my_face_shape into the target_face_shape.</p>
+
+<p>Here are the results with varying values of alpha:</p>
+
+<div align="middle">
+  <table style="width=100%">
+        <figure>
+          <img src="images/angela_dane_morph_neg_05.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">alpha = -0.5.</figcaption>
+        </figure>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/angela_cropped.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">alpha = 0 (just my face shape, no Dane).</figcaption>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/angela_to_dane.jpg" align="middle" width="450px"/>
+            <figcaption align="middle">alpha = 1 (my face shape warped to average Danish face shape).</figcaption>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/angela_dane_morph_15.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">alpha = 1.5.</figcaption>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/angela_dane_morph_2.jpg" align="middle" width="450px"/>
+            <figcaption align="middle">alpha = 2.</figcaption>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h2 align="middle">Bells and Whistles</h2>
+
+<p>I attempted to make myself look more masculine.</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/angela_cropped_2.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">My face.</figcaption>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/chineseaverageman.jpg" align="middle" width="450px"/>
+            <figcaption align="middle">Average Chinese male face.</figcaption>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/angela_to_man_shape_warp.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">My face shape warped to the average face shape between my face and the average Chinese male face.</figcaption>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/angela_man_appearance_morph.jpg" align="middle" width="450px"/>
+            <figcaption align="middle">Appearance morph between my face and the average Chinese male face.</figcaption>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+        <figure>
+          <img src="images/angela_man_morph.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">More masculine Angela. Shape and appearance morph.</figcaption>
+        </figure>
+  </table>
+</div>
+
+<p>Then I attempted to make myself look more white.</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/angela_cropped_2.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">My face.</figcaption>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/avg_white_woman.jpg" align="middle" width="450px"/>
+            <figcaption align="middle">Average white American female face.</figcaption>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/angela_to_white_shape_warp.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">My face shape warped to the average face shape between my face and the average white American female face.</figcaption>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/angela_white_appearance_morph.jpg" align="middle" width="450px"/>
+            <figcaption align="middle">Appearance morph between my face and the average white American female face.</figcaption>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+        <figure>
+          <img src="images/angela_white_morph.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">More white Angela. Shape and appearance morph.</figcaption>
+        </figure>
+  </table>
+</div>
+
+<p>And then, I attempted to make myself look more baby-like.</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/angela_cropped.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">My face.</figcaption>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/asian_baby.jpg" align="middle" width="450px"/>
+            <figcaption align="middle">A face of an Asian female baby.</figcaption>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <figure>
+          <img src="images/angela_to_baby_shape_warp.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">My face shape warped to the average face shape between my face and the face of the Asian female baby.</figcaption>
+        </figure>
+      </td>
+      <br>
+      <td>
+        <figure>
+            <img src="images/angela_baby_appearance_morph.jpg" align="middle" width="450px"/>
+            <figcaption align="middle">Appearance morph between my face and the face of the Asian female baby.</figcaption>
+        </figure>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div align="middle">
+  <table style="width=100%">
+        <figure>
+          <img src="images/angela_baby_morph.jpg" align="middle" width="450px"/>
+          <figcaption align="middle">More baby-like Angela. Shape and appearance morph.</figcaption>
+        </figure>
+  </table>
+</div>
+
+<p>I made a morphing video using photos of myself from age 10 to age 21, my current age as of writing this webpage.</p>
+
+<div align="middle">
+  <table style="width=100%">
+        <figure>
+          <img src="images/angelas_faces_30fps.gif" align="middle" width="450px"/>
+          <figcaption align="middle">I morphed 16 photos of myself from age 10 to age 21.
+              I used 45 frames to morph from one photo to the next photo.</figcaption>
+        </figure>
+  </table>
+</div>
+
+<p>All images besides my face were found on the Internet.</p>
